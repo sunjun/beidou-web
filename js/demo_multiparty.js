@@ -545,7 +545,7 @@ function callEverybodyElse(roomName, otherPeople) {
             }
         }
         function callFailure(errorCode, errorText) {
-            easyrtc.showError(errorCode, errorText);
+            //easyrtc.showError(errorCode, errorText);
             if( connectCount < maxCALLERS && position > 0) {
                 establishConnection(position-1);
             }
@@ -691,7 +691,7 @@ function appInit() {
     easyrtc.easyApp("easyrtc.multiparty1", "box0", ["box1", "box2", "box3"], loginSuccess);
     easyrtc.setPeerListener(messageListener);
     easyrtc.setDisconnectListener( function() {
-        easyrtc.showError("LOST-CONNECTION", "Lost connection to signaling server");
+        //easyrtc.showError("LOST-CONNECTION", "Lost connection to signaling server");
     });
     easyrtc.setOnCall( function(easyrtcid, slot) {
         console.log("getConnection count="  + easyrtc.getConnectionCount() );

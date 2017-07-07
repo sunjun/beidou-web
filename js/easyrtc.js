@@ -4193,6 +4193,7 @@ var Easyrtc = function() {
      * @param errorObject
      */
     this.onError = function(errorObject) {
+      /*
         logDebug("saw error " + errorObject.errorText);
 
         var errorDiv = document.getElementById('easyrtcErrorDialog');
@@ -4223,7 +4224,8 @@ var Easyrtc = function() {
         messageNode.className = 'easyrtcErrorDialog_element';
         messageNode.appendChild(document.createTextNode(errorObject.errorText));
         errorBody.appendChild(messageNode);
-        errorDiv.style.display = "block";
+        errorDiv.style.display = "none";
+       */ 
     };
 
     /** @private
@@ -6355,7 +6357,7 @@ var Easyrtc = function() {
                         break;
                     case "failed":
                         if (failureCB) {
-                            failureCB(self.errCodes.NOVIABLEICE, "No usable STUN/TURN path");
+                            //failureCB(self.errCodes.NOVIABLEICE, "No usable STUN/TURN path");
                         }
                         delete peerConns[otherUser];
                         break;
