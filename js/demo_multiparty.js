@@ -1,11 +1,16 @@
 
 
-var activeBox = -1;  // nothing selected
+var activeBox = 1;  // nothing selected
 var aspectRatio = 4/3;  // standard definition video aspect ratio
 var maxCALLERS = 7;
 var numVideoOBJS = maxCALLERS+1;
 var layout;
 
+var bigWidth = 614;
+var bigHeight = 462;
+
+var smallWidth = 110;
+var smallHeight = 83;
 
 easyrtc.dontAddCloseButtons(true);
 
@@ -293,78 +298,73 @@ var reshapeThumbsNew = [
 
 function reshape1of8(parentw, parenth) {
     return {
-        left: 120,      //(854-614)/2
-        top: 23,        //(668-462-83)/3
-        width: 614,     
-        height: 462
+        left: (parentw-bigWidth)/2,      //(854-614)/2
+        top: (parenth-bigHeight-smallHeight)/3,        //(668-462-83)/3
+        width: bigWidth,
+        height: bigHeight
     }
 },
 
 function reshape2of8(parentw, parenth) {
     return {
-        left: 15,       //[(854-110*7)-(6*9)]/2
-        top: 562,       //854-462-23-23
-        width: 110,
-        height: 83
+        left: (parentw-smallWidth*7)/8,       //[(854-110*7)-(6*9)]/2
+        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,       //854-462-23-23
+        width: smallWidth,
+        height: smallHeight
     }
 },
 
 function reshape3of8(parentw, parenth) {
     return {
-        left: 15 + 110*1 + 9*1,
-        top: 562,
-        width: 110,
-        height: 83
-
+        left: (parentw-smallWidth*7)/8*2+smallWidth,
+        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        width: smallWidth,
+        height: smallHeight
     }
 },
 
 function reshape4of8(parentw, parenth) {
     return {
-        left: 15 + 110*2 + 9*2,
-        top: 562,
-        width: 110,
-        height: 83
-
+        left: (parentw-smallWidth*7)/8*3+smallWidth*2,
+        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        width: smallWidth,
+        height: smallHeight
     }
 },
 
 function reshape5of8(parentw, parenth) {
     return {
-        left: 15 + 110*3 + 9*3,
-        top: 562,
-        width: 110,
-        height: 83
-
+        left: (parentw-smallWidth*7)/8*4+smallWidth*3,
+        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        width: smallWidth,
+        height: smallHeight
   }
 },
 
 function reshape6of8(parentw, parenth) {
     return {
-        left: 15 + 110*4 + 9*4,
-        top: 562,
-        width: 110,
-        height: 83
-
+        left: (parentw-smallWidth*7)/8*5+smallWidth*4,
+        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        width: smallWidth,
+        height: smallHeight
     }
 },
 
 function reshape7of8(parentw, parenth) {
     return {
-        left: 15 + 110*5 + 9*5,
-        top: 562,
-        width: 110,
-        height: 83
-
+        left: (parentw-smallWidth*7)/8*6+smallWidth*5,
+        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        width: smallWidth,
+        height: smallHeight
     }
 },
 
 function reshape8of8(parentw, parenth) {
     return {
-        left: 15 + 110*6 + 9*6, 
-        top: 562, 
-        width: 110,
-        height: 83
+        left: (parentw-smallWidth*7)/8*7+smallWidth*6,
+        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        width: smallWidth,
+        height: smallHeight
     }
 },
 
@@ -579,12 +579,30 @@ function expandThumb(whichBox) {
     handleWindowResize();
 }
 
+function expandThumbNew(whichBox) {
+    var lastActiveBox = activeBox;
+    var tempReshapeFn;
+
+    if (lastActiveBox != whichBox) {
+        var lastActiveId = getIdOfBox(lastActiveBox);
+        var activeId = getIdOfBox(whichBox);
+
+        var lastActiveElement = document.getElementById(lastActiveId);
+        var activeElement = document.getElementById(activeId);
+
+        tempReshapeFn = lastActiveElement.reshapeMe;
+        lastActiveElement.reshapeMe = activeElement.reshapeMe;
+        activeElement.reshapeMe = tempReshapeFn;
+    }
+    handleWindowResize();
+}
+
 function prepVideoBox(whichBox) {
     var id = getIdOfBox(whichBox);
     setReshaper(id, reshapeThumbsNew[whichBox]);
-//    document.getElementById(id).onclick = function() {
-//        expandThumb(whichBox);
-//    };
+    document.getElementById(id).onclick = function() {
+        expandThumbNew(whichBox);
+    };
 }
 
 
@@ -755,7 +773,7 @@ function startEasyRTCClient(carNum)
 {
     easyrtc.enableVideo(true);
     easyrtc.enableVideoReceive(true);
-    
+
     var localFilter = easyrtc.buildLocalSdpFilter( {
         audioRecvBitrate:10, videoRecvBitrate:30
     });
@@ -822,29 +840,29 @@ function appInit() {
     handleWindowResize(); //initial call of the top-down layout manager
 
 
-    fetch('../../userName')  
-    .then(  
-        function(response) {  
-          if (response.status !== 200) {  
-            console.log('Looks like there was a problem. Status Code: ' +  
-              response.status);  
-            return;  
+    fetch('../../userName')
+    .then(
+        function(response) {
+          if (response.status !== 200) {
+            console.log('Looks like there was a problem. Status Code: ' +
+              response.status);
+            return;
         }
 
-      // Examine the text in the response  
-      response.json().then(function(data) {  
-        console.log(data.carNum);  
+      // Examine the text in the response
+      response.json().then(function(data) {
+        console.log(data.carNum);
         if (data.carNum) {
             startEasyRTCClient(data.carNum);
             var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
             document.getElementById("box0").poster = imageName;
 
         }
-    });  
-  }  
-  )  
-    .catch(function(err) {  
-        console.log('Fetch Error :-S', err);  
+    });
+  }
+  )
+    .catch(function(err) {
+        console.log('Fetch Error :-S', err);
     });
 
 
