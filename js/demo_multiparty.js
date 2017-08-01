@@ -2,7 +2,7 @@
 
 var activeBox = -1;  // nothing selected
 var aspectRatio = 4/3;  // standard definition video aspect ratio
-var maxCALLERS = 3;
+var maxCALLERS = 7;
 var numVideoOBJS = maxCALLERS+1;
 var layout;
 
@@ -248,7 +248,7 @@ function reshape4of4(parentw, parenth) {
     }
 }
 
-var boxUsed = [true, false, false, false];
+var boxUsed = [true, false, false, false, false, false, false, false];
 var connectCount = 0;
 
 
@@ -288,6 +288,88 @@ function setSharedVideoSize(parentw, parenth) {
     sharedVideoWidth = Math.min(w, h * aspectRatio);
     sharedVideoHeight = Math.min(h, w/aspectRatio);
 }
+
+var reshapeThumbsNew = [
+
+function reshape1of8(parentw, parenth) {
+    return {
+        left: 120,      //(854-614)/2
+        top: 23,        //(668-462-83)/3
+        width: 614,     
+        height: 462
+    }
+},
+
+function reshape2of8(parentw, parenth) {
+    return {
+        left: 15,       //[(854-110*7)-(6*9)]/2
+        top: 562,       //854-462-23-23
+        width: 110,
+        height: 83
+    }
+},
+
+function reshape3of8(parentw, parenth) {
+    return {
+        left: 15 + 110*1 + 9*1,
+        top: 562,
+        width: 110,
+        height: 83
+
+    }
+},
+
+function reshape4of8(parentw, parenth) {
+    return {
+        left: 15 + 110*2 + 9*2,
+        top: 562,
+        width: 110,
+        height: 83
+
+    }
+},
+
+function reshape5of8(parentw, parenth) {
+    return {
+        left: 15 + 110*3 + 9*3,
+        top: 562,
+        width: 110,
+        height: 83
+
+  }
+},
+
+function reshape6of8(parentw, parenth) {
+    return {
+        left: 15 + 110*4 + 9*4,
+        top: 562,
+        width: 110,
+        height: 83
+
+    }
+},
+
+function reshape7of8(parentw, parenth) {
+    return {
+        left: 15 + 110*5 + 9*5,
+        top: 562,
+        width: 110,
+        height: 83
+
+    }
+},
+
+function reshape8of8(parentw, parenth) {
+    return {
+        left: 15 + 110*6 + 9*6, 
+        top: 562, 
+        width: 110,
+        height: 83
+    }
+},
+
+];
+
 
 var reshapeThumbs = [
     function(parentw, parenth) {
@@ -499,10 +581,10 @@ function expandThumb(whichBox) {
 
 function prepVideoBox(whichBox) {
     var id = getIdOfBox(whichBox);
-    setReshaper(id, reshapeThumbs[whichBox]);
-    document.getElementById(id).onclick = function() {
-        expandThumb(whichBox);
-    };
+    setReshaper(id, reshapeThumbsNew[whichBox]);
+//    document.getElementById(id).onclick = function() {
+//        expandThumb(whichBox);
+//    };
 }
 
 
@@ -560,7 +642,7 @@ function callEverybodyElse(roomName, otherPeople) {
 
 
 function loginSuccess() {
-    expandThumb(0);  // expand the mirror image initially.
+    //expandThumb(0);  // expand the mirror image initially.
 }
 
 
@@ -669,6 +751,58 @@ function messageListener(easyrtcid, msgType, content) {
     }
 }
 
+function startEasyRTCClient(carNum)
+{
+    easyrtc.enableVideo(true);
+    easyrtc.enableVideoReceive(true);
+    
+    var localFilter = easyrtc.buildLocalSdpFilter( {
+        audioRecvBitrate:10, videoRecvBitrate:30
+    });
+    var remoteFilter = easyrtc.buildRemoteSdpFilter({
+        audioSendBitrate: 10, videoSendBitrate:30
+    });
+    easyrtc.setSdpFilters(localFilter, remoteFilter);
+
+    easyrtc.setRoomOccupantListener(callEverybodyElse);
+    easyrtc.setUsername(carNum);
+    easyrtc.easyApp("easyrtc.multiparty", "box0", ["box1", "box2", "box3", "box4", "box5", "box6", "box7"], loginSuccess);
+    easyrtc.setPeerListener(messageListener);
+    easyrtc.setDisconnectListener( function() {
+        //easyrtc.showError("LOST-CONNECTION", "Lost connection to signaling server");
+    });
+    easyrtc.setOnCall( function(easyrtcid, slot) {
+        console.log("getConnection count="  + easyrtc.getConnectionCount() );
+        boxUsed[slot+1] = true;
+//        if(activeBox == 0 ) { // first connection
+//            collapseToThumb();
+//            document.getElementById('textEntryButton').style.display = 'block';
+//        }
+        document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
+        var username = easyrtc.idToName(easyrtcid);
+        var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
+        document.getElementById(getIdOfBox(slot+1)).poster = imageName;
+//        handleWindowResize();
+    });
+
+
+    easyrtc.setOnHangup(function(easyrtcid, slot) {
+        boxUsed[slot+1] = false;
+        if(activeBox > 0 && slot+1 == activeBox) {
+            collapseToThumb();
+        }
+        setTimeout(function() {
+            document.getElementById(getIdOfBox(slot+1)).style.visibility = "hidden";
+
+//            if( easyrtc.getConnectionCount() == 0 ) { // no more connections
+//                expandThumb(0);
+//                document.getElementById('textEntryButton').style.display = 'none';
+//                document.getElementById('textentryBox').style.display = 'none';
+//            }
+//            handleWindowResize();
+        },20);
+    });
+}
 
 function appInit() {
 
@@ -687,40 +821,34 @@ function appInit() {
     window.onresize = handleWindowResize;
     handleWindowResize(); //initial call of the top-down layout manager
 
-    easyrtc.setRoomOccupantListener(callEverybodyElse);
-    easyrtc.easyApp("easyrtc.multiparty1", "box0", ["box1", "box2", "box3"], loginSuccess);
-    easyrtc.setPeerListener(messageListener);
-    easyrtc.setDisconnectListener( function() {
-        //easyrtc.showError("LOST-CONNECTION", "Lost connection to signaling server");
-    });
-    easyrtc.setOnCall( function(easyrtcid, slot) {
-        console.log("getConnection count="  + easyrtc.getConnectionCount() );
-        boxUsed[slot+1] = true;
-        if(activeBox == 0 ) { // first connection
-            collapseToThumb();
-            document.getElementById('textEntryButton').style.display = 'block';
+
+    fetch('../../userName')  
+    .then(  
+        function(response) {  
+          if (response.status !== 200) {  
+            console.log('Looks like there was a problem. Status Code: ' +  
+              response.status);  
+            return;  
         }
-        document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
-        handleWindowResize();
-    });
 
+      // Examine the text in the response  
+      response.json().then(function(data) {  
+        console.log(data.carNum);  
+        if (data.carNum) {
+            startEasyRTCClient(data.carNum);
+            var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
+            document.getElementById("box0").poster = imageName;
 
-    easyrtc.setOnHangup(function(easyrtcid, slot) {
-        boxUsed[slot+1] = false;
-        if(activeBox > 0 && slot+1 == activeBox) {
-            collapseToThumb();
         }
-        setTimeout(function() {
-            document.getElementById(getIdOfBox(slot+1)).style.visibility = "hidden";
-
-            if( easyrtc.getConnectionCount() == 0 ) { // no more connections
-                expandThumb(0);
-                document.getElementById('textEntryButton').style.display = 'none';
-                document.getElementById('textentryBox').style.display = 'none';
-            }
-            handleWindowResize();
-        },20);
+    });  
+  }  
+  )  
+    .catch(function(err) {  
+        console.log('Fetch Error :-S', err);  
     });
+
+
+
 }
 
 
