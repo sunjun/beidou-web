@@ -1,6 +1,7 @@
 
 
-var activeBox = 1;  // nothing selected
+var activeBox = 0;  // nothing selected
+var lastActiveBox = 0;
 var aspectRatio = 4/3;  // standard definition video aspect ratio
 var maxCALLERS = 7;
 var numVideoOBJS = maxCALLERS+1;
@@ -580,7 +581,7 @@ function expandThumb(whichBox) {
 }
 
 function expandThumbNew(whichBox) {
-    var lastActiveBox = activeBox;
+    lastActiveBox = activeBox;
     var tempReshapeFn;
 
     if (lastActiveBox != whichBox) {
@@ -593,6 +594,8 @@ function expandThumbNew(whichBox) {
         tempReshapeFn = lastActiveElement.reshapeMe;
         lastActiveElement.reshapeMe = activeElement.reshapeMe;
         activeElement.reshapeMe = tempReshapeFn;
+
+        activeBox = whichBox;
     }
     handleWindowResize();
 }
