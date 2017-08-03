@@ -1,7 +1,6 @@
 
 
 var activeBox = 0;  // nothing selected
-var lastActiveBox = 0;
 var aspectRatio = 4/3;  // standard definition video aspect ratio
 var maxCALLERS = 7;
 var numVideoOBJS = maxCALLERS+1;
@@ -255,6 +254,8 @@ function reshape4of4(parentw, parenth) {
 }
 
 var boxUsed = [true, false, false, false, false, false, false, false];
+var boxPostionUsed = [false, false, false, false, false, false, false, false];
+var boxPostionHash = {"box0":0, "box1":1, "box2":2, "box3":3, "box4":4, "box5":5, "box6":6, "box7":7}
 var connectCount = 0;
 
 
@@ -581,22 +582,38 @@ function expandThumb(whichBox) {
 }
 
 function expandThumbNew(whichBox) {
-    lastActiveBox = activeBox;
-    var tempReshapeFn;
-
-    if (lastActiveBox != whichBox) {
-        var lastActiveId = getIdOfBox(lastActiveBox);
+    //如果第一个没有被占用，先切换到第一个
+    if (boxPostionUsed[0] == false) {
         var activeId = getIdOfBox(whichBox);
+        setReshaper(activeId, reshapeThumbsNew[0]);
 
-        var lastActiveElement = document.getElementById(lastActiveId);
-        var activeElement = document.getElementById(activeId);
+        var lastId = boxPostionHash[activeId];
+        boxPostionUsed[lastId] = false;
+        boxPostionUsed[0] = true;
+        boxPostionHash[activeId] = 0;
+    } else {
+        var lastActiveBox = activeBox;
+        var tempReshapeFn;
+        var tempId;
 
-        tempReshapeFn = lastActiveElement.reshapeMe;
-        lastActiveElement.reshapeMe = activeElement.reshapeMe;
-        activeElement.reshapeMe = tempReshapeFn;
+        if (lastActiveBox != whichBox) {
+            var lastActiveId = getIdOfBox(lastActiveBox);
+            var activeId = getIdOfBox(whichBox);
 
-        activeBox = whichBox;
+            var lastActiveElement = document.getElementById(lastActiveId);
+            var activeElement = document.getElementById(activeId);
+
+            tempReshapeFn = lastActiveElement.reshapeMe;
+            lastActiveElement.reshapeMe = activeElement.reshapeMe;
+            activeElement.reshapeMe = tempReshapeFn;
+
+            tempId = boxPostionHash[lastActiveId];
+            boxPostionHash[lastActiveId] = boxPostionHash[activeId];
+            boxPostionHash[activeId] = tempId;
+        }
     }
+
+    activeBox = whichBox;
     handleWindowResize();
 }
 
@@ -795,6 +812,7 @@ function startEasyRTCClient(carNum)
     easyrtc.setOnCall( function(easyrtcid, slot) {
         console.log("getConnection count="  + easyrtc.getConnectionCount() );
         boxUsed[slot+1] = true;
+
 //        if(activeBox == 0 ) { // first connection
 //            collapseToThumb();
 //            document.getElementById('textEntryButton').style.display = 'block';
@@ -803,15 +821,35 @@ function startEasyRTCClient(carNum)
         var username = easyrtc.idToName(easyrtcid);
         var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
         document.getElementById(getIdOfBox(slot+1)).poster = imageName;
+
+        var index;
+        var findUnused = false;
+        for (index = 1; index < boxPostionUsed.length; ++index) {
+            if (boxPostionUsed[index] == false) {
+                setReshaper(getIdOfBox(slot+1), reshapeThumbsNew[index]);
+                boxPostionUsed[index] = true;
+                boxPostionHash[getIdOfBox(slot+1)] = index;
+                findUnused = true;
+                break;
+            }
+        }
+
+        if (findUnused == false && boxPostionUsed[0] == false) {
+            setReshaper(getIdOfBox(slot+1), reshapeThumbsNew[0]);
+            boxPostionUsed[0] = true;
+            boxPostionHash[getIdOfBox(slot+1)] = 0;
+        }
 //        handleWindowResize();
     });
 
 
     easyrtc.setOnHangup(function(easyrtcid, slot) {
         boxUsed[slot+1] = false;
-        if(activeBox > 0 && slot+1 == activeBox) {
-            collapseToThumb();
-        }
+        var boxPostion = boxPostionHash[getIdOfBox(slot+1)];
+        boxPostionUsed[boxPostion] = false;
+        //if(activeBox > 0 && slot+1 == activeBox) {
+        //    collapseToThumb();
+        //}
         setTimeout(function() {
             document.getElementById(getIdOfBox(slot+1)).style.visibility = "hidden";
 
@@ -859,7 +897,7 @@ function appInit() {
             startEasyRTCClient(data.carNum);
             var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
             document.getElementById("box0").poster = imageName;
-
+            boxPostionUsed[0] = true;
         }
     });
   }
