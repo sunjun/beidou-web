@@ -11,6 +11,8 @@ var bigHeight = 462;
 
 var smallWidth = 110;
 var smallHeight = 83;
+var serverCarNum = 0;
+var selfCarNum = 0;
 
 easyrtc.dontAddCloseButtons(true);
 
@@ -298,19 +300,28 @@ function setSharedVideoSize(parentw, parenth) {
 
 var reshapeThumbsNew = [
 
-function reshape1of8(parentw, parenth) {
+function reshape0of8(parentw, parenth) {
     return {
-        left: (parentw-bigWidth)/2,      //(854-614)/2
+        left: (parentw-bigWidth-smallWidth)/4*3+smallWidth,      //(854-614)/2
         top: (parenth-bigHeight-smallHeight)/3,        //(668-462-83)/3
         width: bigWidth,
         height: bigHeight
     }
 },
 
+function reshape1of8(parentw, parenth) {
+    return {
+        left: (parentw-bigWidth-smallWidth)/4,      //(854-614)/2
+        top: (parenth-smallHeight*5)/5,
+        width: smallWidth,
+        height: smallHeight
+    }
+},
+
 function reshape2of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*7)/8,       //[(854-110*7)-(6*9)]/2
-        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,       //854-462-23-23
+        left: (parentw-bigWidth-smallWidth)/4,       //[(854-110*7)-(6*9)]/2
+        top: (parenth-smallHeight*5)/5*2+smallHeight,       //854-462-23-23
         width: smallWidth,
         height: smallHeight
     }
@@ -318,8 +329,8 @@ function reshape2of8(parentw, parenth) {
 
 function reshape3of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*7)/8*2+smallWidth,
-        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        left: (parentw-bigWidth-smallWidth)/4,
+        top: (parenth-smallHeight*5)/5*3+smallHeight*2,
         width: smallWidth,
         height: smallHeight
     }
@@ -327,8 +338,8 @@ function reshape3of8(parentw, parenth) {
 
 function reshape4of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*7)/8*3+smallWidth*2,
-        top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
+        left: (parentw-bigWidth-smallWidth)/4,
+        top: (parenth-smallHeight*5)/5*4+smallHeight*3,
         width: smallWidth,
         height: smallHeight
     }
@@ -336,7 +347,7 @@ function reshape4of8(parentw, parenth) {
 
 function reshape5of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*7)/8*4+smallWidth*3,
+        left: (parentw-smallWidth*5)/5 + smallWidth,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -345,7 +356,7 @@ function reshape5of8(parentw, parenth) {
 
 function reshape6of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*7)/8*5+smallWidth*4,
+        left: (parentw-smallWidth*5)/5*2 + smallWidth*2,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -354,7 +365,7 @@ function reshape6of8(parentw, parenth) {
 
 function reshape7of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*7)/8*6+smallWidth*5,
+        left: (parentw-smallWidth*5)/5*3 + smallWidth*3,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -363,7 +374,7 @@ function reshape7of8(parentw, parenth) {
 
 function reshape8of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*7)/8*7+smallWidth*6,
+        left: (parentw-smallWidth*5)/5*4 + smallWidth*4,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -582,39 +593,17 @@ function expandThumb(whichBox) {
 }
 
 function expandThumbNew(whichBox) {
-    //如果第一个没有被占用，先切换到第一个
-    if (boxPostionUsed[0] == false) {
+    var lastActiveBox = activeBox;
+
+    if (lastActiveBox != whichBox) {
+        var lastActiveId = getIdOfBox(lastActiveBox);
         var activeId = getIdOfBox(whichBox);
+
+        setReshaper(lastActiveId, reshapeThumbsNew[lastActiveBox]);
         setReshaper(activeId, reshapeThumbsNew[0]);
-
-        var lastId = boxPostionHash[activeId];
-        boxPostionUsed[lastId] = false;
-        boxPostionUsed[0] = true;
-        boxPostionHash[activeId] = 0;
-    } else {
-        var lastActiveBox = activeBox;
-        var tempReshapeFn;
-        var tempId;
-
-        if (lastActiveBox != whichBox) {
-            var lastActiveId = getIdOfBox(lastActiveBox);
-            var activeId = getIdOfBox(whichBox);
-
-            var lastActiveElement = document.getElementById(lastActiveId);
-            var activeElement = document.getElementById(activeId);
-
-            tempReshapeFn = lastActiveElement.reshapeMe;
-            lastActiveElement.reshapeMe = activeElement.reshapeMe;
-            activeElement.reshapeMe = tempReshapeFn;
-
-            tempId = boxPostionHash[lastActiveId];
-            boxPostionHash[lastActiveId] = boxPostionHash[activeId];
-            boxPostionHash[activeId] = tempId;
-        }
+        activeBox = whichBox;
+        handleWindowResize();
     }
-
-    activeBox = whichBox;
-    handleWindowResize();
 }
 
 function prepVideoBox(whichBox) {
@@ -789,6 +778,17 @@ function messageListener(easyrtcid, msgType, content) {
     }
 }
 
+function getBoxArray(box)
+{
+    var boxArray = [];
+    for(var i = 1; i <= numVideoOBJS; i++) {
+        if (box != getIdOfBox(i)) {
+            boxArray.push(getIdOfBox(i))
+        }
+    }
+    return boxArray;
+}
+
 function startEasyRTCClient(carNum)
 {
     easyrtc.enableVideo(true);
@@ -804,7 +804,10 @@ function startEasyRTCClient(carNum)
 
     easyrtc.setRoomOccupantListener(callEverybodyElse);
     easyrtc.setUsername(carNum);
-    easyrtc.easyApp("easyrtc.multiparty", "box0", ["box1", "box2", "box3", "box4", "box5", "box6", "box7"], loginSuccess);
+    var selfBox = getIdOfBox(carNum);
+    var boxArray = getBoxArray(selfBox);
+    console.log(boxArray);
+    easyrtc.easyApp("easyrtc.multiparty", selfBox, boxArray, loginSuccess);
     easyrtc.setPeerListener(messageListener);
     easyrtc.setDisconnectListener( function() {
         //easyrtc.showError("LOST-CONNECTION", "Lost connection to signaling server");
@@ -817,41 +820,23 @@ function startEasyRTCClient(carNum)
 //            collapseToThumb();
 //            document.getElementById('textEntryButton').style.display = 'block';
 //        }
-        document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
         var username = easyrtc.idToName(easyrtcid);
+        document.getElementById(getIdOfBox(username)).style.visibility = "visible";
         var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
-        document.getElementById(getIdOfBox(slot+1)).poster = imageName;
+        document.getElementById(getIdOfBox(username)).poster = imageName;
 
-        var index;
-        var findUnused = false;
-        for (index = 1; index < boxPostionUsed.length; ++index) {
-            if (boxPostionUsed[index] == false) {
-                setReshaper(getIdOfBox(slot+1), reshapeThumbsNew[index]);
-                boxPostionUsed[index] = true;
-                boxPostionHash[getIdOfBox(slot+1)] = index;
-                findUnused = true;
-                break;
-            }
-        }
-
-        if (findUnused == false && boxPostionUsed[0] == false) {
-            setReshaper(getIdOfBox(slot+1), reshapeThumbsNew[0]);
-            boxPostionUsed[0] = true;
-            boxPostionHash[getIdOfBox(slot+1)] = 0;
-        }
 //        handleWindowResize();
     });
 
 
     easyrtc.setOnHangup(function(easyrtcid, slot) {
         boxUsed[slot+1] = false;
-        var boxPostion = boxPostionHash[getIdOfBox(slot+1)];
-        boxPostionUsed[boxPostion] = false;
         //if(activeBox > 0 && slot+1 == activeBox) {
         //    collapseToThumb();
         //}
+        var username = easyrtc.idToName(easyrtcid);
         setTimeout(function() {
-            document.getElementById(getIdOfBox(slot+1)).style.visibility = "hidden";
+            //document.getElementById(getIdOfBox(username)).style.visibility = "hidden";
 
 //            if( easyrtc.getConnectionCount() == 0 ) { // no more connections
 //                expandThumb(0);
@@ -863,11 +848,11 @@ function startEasyRTCClient(carNum)
     });
 }
 
-function appInit() {
-
+function appInit()
+{
     // Prep for the top-down layout manager
     setReshaper('fullpage', reshapeFull);
-    for(var i = 0; i < numVideoOBJS; i++) {
+    for(var i = 0; i <= numVideoOBJS; i++) {
         prepVideoBox(i);
     }
     setReshaper('killButton', killButtonReshaper);
@@ -880,34 +865,58 @@ function appInit() {
     window.onresize = handleWindowResize;
     handleWindowResize(); //initial call of the top-down layout manager
 
+    fetch('../../serverCarNum')
+        .then(
+                function(response) {
+                    if (response.status !== 200) {
+                        console.log('Looks like there was a problem. Status Code: ' +
+                                response.status);
+                        return;
+                    }
+
+                    // Examine the text in the response
+                    response.json().then(function(data) {
+                        console.log(data.carNum);
+                        if (data.carNum) {
+                            serverCarNum = data.carNum;
+                            console.log(serverCarNum);
+                            setReshaper(getIdOfBox(serverCarNum), reshapeThumbsNew[0]);
+                            activeBox = serverCarNum;
+                            handleWindowResize();
+                        }
+                    });
+                }
+             )
+        .catch(function(err) {
+            console.log('Fetch Error :-S', err);
+        });
 
     fetch('../../userName')
-    .then(
-        function(response) {
-          if (response.status !== 200) {
-            console.log('Looks like there was a problem. Status Code: ' +
-              response.status);
-            return;
-        }
+        .then(
+                function(response) {
+                    if (response.status !== 200) {
+                        console.log('Looks like there was a problem. Status Code: ' +
+                                response.status);
+                        return;
+                    }
 
-      // Examine the text in the response
-      response.json().then(function(data) {
-        console.log(data.carNum);
-        if (data.carNum) {
-            startEasyRTCClient(data.carNum);
-            var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
-            document.getElementById("box0").poster = imageName;
-            boxPostionUsed[0] = true;
-        }
-    });
-  }
-  )
-    .catch(function(err) {
-        console.log('Fetch Error :-S', err);
-    });
-
-
-
+                    // Examine the text in the response
+                    response.json().then(function(data) {
+                        console.log(data.carNum);
+                        if (data.carNum) {
+                            selfCarNum = data.carNum;
+                            startEasyRTCClient(data.carNum);
+                            var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
+                            var id = getIdOfBox(data.carNum);
+                            document.getElementById(id).style.visibility = "visible";
+                            document.getElementById(id).poster = imageName;
+                        }
+                    });
+                }
+             )
+        .catch(function(err) {
+            console.log('Fetch Error :-S', err);
+        });
 }
 
 
