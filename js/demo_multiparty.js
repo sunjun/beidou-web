@@ -302,7 +302,7 @@ var reshapeThumbsNew = [
 
 function reshape0of8(parentw, parenth) {
     return {
-        left: (parentw-bigWidth-smallWidth)/4*3+smallWidth,      //(854-614)/2
+        left: (parentw-bigWidth-smallWidth)/4,      //(854-614)/2
         top: (parenth-bigHeight-smallHeight)/3,        //(668-462-83)/3
         width: bigWidth,
         height: bigHeight
@@ -311,7 +311,7 @@ function reshape0of8(parentw, parenth) {
 
 function reshape1of8(parentw, parenth) {
     return {
-        left: (parentw-bigWidth-smallWidth)/4,      //(854-614)/2
+        left: (parentw-bigWidth-smallWidth)/4*3+bigWidth,      //(854-614)/2
         top: (parenth-smallHeight*5)/5,
         width: smallWidth,
         height: smallHeight
@@ -320,7 +320,7 @@ function reshape1of8(parentw, parenth) {
 
 function reshape2of8(parentw, parenth) {
     return {
-        left: (parentw-bigWidth-smallWidth)/4,       //[(854-110*7)-(6*9)]/2
+        left: (parentw-bigWidth-smallWidth)/4*3+bigWidth,       //[(854-110*7)-(6*9)]/2
         top: (parenth-smallHeight*5)/5*2+smallHeight,       //854-462-23-23
         width: smallWidth,
         height: smallHeight
@@ -329,7 +329,7 @@ function reshape2of8(parentw, parenth) {
 
 function reshape3of8(parentw, parenth) {
     return {
-        left: (parentw-bigWidth-smallWidth)/4,
+        left: (parentw-bigWidth-smallWidth)/4*3+bigWidth,
         top: (parenth-smallHeight*5)/5*3+smallHeight*2,
         width: smallWidth,
         height: smallHeight
@@ -338,7 +338,7 @@ function reshape3of8(parentw, parenth) {
 
 function reshape4of8(parentw, parenth) {
     return {
-        left: (parentw-bigWidth-smallWidth)/4,
+        left: (parentw-bigWidth-smallWidth)/4*3+bigWidth,
         top: (parenth-smallHeight*5)/5*4+smallHeight*3,
         width: smallWidth,
         height: smallHeight
@@ -347,7 +347,7 @@ function reshape4of8(parentw, parenth) {
 
 function reshape5of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*5)/5 + smallWidth,
+        left: (parentw-smallWidth*5)/5,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -356,7 +356,7 @@ function reshape5of8(parentw, parenth) {
 
 function reshape6of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*5)/5*2 + smallWidth*2,
+        left: (parentw-smallWidth*5)/5*2 + smallWidth,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -365,7 +365,7 @@ function reshape6of8(parentw, parenth) {
 
 function reshape7of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*5)/5*3 + smallWidth*3,
+        left: (parentw-smallWidth*5)/5*3 + smallWidth*2,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -374,7 +374,7 @@ function reshape7of8(parentw, parenth) {
 
 function reshape8of8(parentw, parenth) {
     return {
-        left: (parentw-smallWidth*5)/5*4 + smallWidth*4,
+        left: (parentw-smallWidth*5)/5*4 + smallWidth*3,
         top: (parenth-bigHeight-smallHeight)/3*2+bigHeight,
         width: smallWidth,
         height: smallHeight
@@ -781,8 +781,12 @@ function messageListener(easyrtcid, msgType, content) {
 function getBoxArray(box)
 {
     var boxArray = [];
+    if (box != getIdOfBox(serverCarNum)) {
+        boxArray.push(getIdOfBox(serverCarNum))
+    }
+
     for(var i = 1; i <= numVideoOBJS; i++) {
-        if (box != getIdOfBox(i)) {
+        if (box != getIdOfBox(i) && i != serverCarNum) {
             boxArray.push(getIdOfBox(i))
         }
     }
@@ -821,7 +825,7 @@ function startEasyRTCClient(carNum)
 //            document.getElementById('textEntryButton').style.display = 'block';
 //        }
         var username = easyrtc.idToName(easyrtcid);
-        document.getElementById(getIdOfBox(username)).style.visibility = "visible";
+        //document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
         var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
         document.getElementById(getIdOfBox(username)).poster = imageName;
 
@@ -836,7 +840,7 @@ function startEasyRTCClient(carNum)
         //}
         var username = easyrtc.idToName(easyrtcid);
         setTimeout(function() {
-            //document.getElementById(getIdOfBox(username)).style.visibility = "hidden";
+            document.getElementById(getIdOfBox(slot+1)).style.visibility = "hidden";
 
 //            if( easyrtc.getConnectionCount() == 0 ) { // no more connections
 //                expandThumb(0);
