@@ -2,8 +2,8 @@
 
 var activeBox = -1;  // nothing selected
 var aspectRatio = 4/3;  // standard definition video aspect ratio
-var maxCALLERS = 7;
-var numVideoOBJS = maxCALLERS+1;
+var maxCALLERS = 8;
+var numVideoOBJS = 7+1;
 var layout;
 
 
@@ -294,72 +294,72 @@ var reshapeThumbsNew = [
 function reshape1of8(parentw, parenth) {
     return {
         left: 0,
-        top: 0,
+        top: (parenth/2 - parentw/4*0.625)/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
     }
 },
 
 function reshape2of8(parentw, parenth) {
     return {
         left: parentw/4 * 1,
-        top: 0,
+        top: (parenth/2 - parentw/4*0.625)/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
     }
 },
 
 function reshape3of8(parentw, parenth) {
     return {
         left: parentw/4 * 2,
-        top: 0,
+        top: (parenth/2 - parentw/4*0.625)/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
     }
 },
 
 function reshape4of8(parentw, parenth) {
     return {
         left: parentw/4 * 3,
-        top: 0,
+        top: (parenth/2 - parentw/4*0.625)/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
     }
 },
 
 function reshape5of8(parentw, parenth) {
     return {
         left: 0,
-        top: parenth/2,
+        top: (parenth/2 - parentw/4*0.625)/2+parenth/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
   }
 },
 
 function reshape6of8(parentw, parenth) {
     return {
         left: parentw/4 * 1,
-        top: parenth/2,
+        top: (parenth/2 - parentw/4*0.625)/2+parenth/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
     }
 },
 
 function reshape7of8(parentw, parenth) {
     return {
         left: parentw/4 * 2,
-        top: parenth/2,
+        top: (parenth/2 - parentw/4*0.625)/2+parenth/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
     }
 },
 
 function reshape8of8(parentw, parenth) {
     return {
         left: parentw/4 * 3,
-        top: parenth/2,
+        top: (parenth/2 - parentw/4*0.625)/2+parenth/2,
         width: parentw/4,
-        height: parenth/2
+        height: parentw/4*0.625
     }
 },
 
@@ -610,6 +610,8 @@ function callEverybodyElse(roomName, otherPeople) {
     for(var easyrtcid in otherPeople ) {
         list.push(easyrtcid);
     }
+
+    list = list.reverse();
     //
     // Connect in reverse order. Latter arriving people are more likely to have
     // empty slots.
@@ -617,18 +619,23 @@ function callEverybodyElse(roomName, otherPeople) {
     function establishConnection(position) {
         function callSuccess() {
             connectCount++;
+            console.log("call success " + position);
+
             if( connectCount < maxCALLERS && position > 0) {
                 establishConnection(position-1);
+
             }
         }
         function callFailure(errorCode, errorText) {
             //easyrtc.showError(errorCode, errorText);
+            console.log("call error " + errorCode + errorText);
+
             if( connectCount < maxCALLERS && position > 0) {
                 establishConnection(position-1);
             }
         }
         easyrtc.call(list[position], callSuccess, callFailure);
-
+        console.log("call " + list[position]);
     }
     if( list.length > 0) {
         establishConnection(list.length-1);
@@ -750,7 +757,7 @@ function startEasyRTCClient(carNum)
 {
     easyrtc.enableVideo(false);
     easyrtc.enableVideoReceive(false);
-    
+
     var localFilter = easyrtc.buildLocalSdpFilter( {
         audioRecvBitrate:10, videoRecvBitrate:0
     });
@@ -817,29 +824,29 @@ function appInit() {
     handleWindowResize(); //initial call of the top-down layout manager
 
 
-    fetch('../../userName')  
-    .then(  
-        function(response) {  
-          if (response.status !== 200) {  
-            console.log('Looks like there was a problem. Status Code: ' +  
-              response.status);  
-            return;  
+    fetch('../../userName')
+    .then(
+        function(response) {
+          if (response.status !== 200) {
+            console.log('Looks like there was a problem. Status Code: ' +
+              response.status);
+            return;
         }
 
-      // Examine the text in the response  
-      response.json().then(function(data) {  
-        console.log(data.carNum);  
+      // Examine the text in the response
+      response.json().then(function(data) {
+        console.log(data.carNum);
         if (data.carNum) {
             startEasyRTCClient(data.carNum);
             var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
             document.getElementById("box0").poster = imageName;
 
         }
-    });  
-  }  
-  )  
-    .catch(function(err) {  
-        console.log('Fetch Error :-S', err);  
+    });
+  }
+  )
+    .catch(function(err) {
+        console.log('Fetch Error :-S', err);
     });
 
 

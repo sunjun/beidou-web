@@ -2,8 +2,8 @@
 
 var activeBox = 0;  // nothing selected
 var aspectRatio = 4/3;  // standard definition video aspect ratio
-var maxCALLERS = 7;
-var numVideoOBJS = maxCALLERS+1;
+var maxCALLERS = 8;
+var numVideoOBJS = 7+1;
 var layout;
 
 var bigWidth = 614;
@@ -642,6 +642,7 @@ function callEverybodyElse(roomName, otherPeople) {
     for(var easyrtcid in otherPeople ) {
         list.push(easyrtcid);
     }
+    list = list.reverse();
     //
     // Connect in reverse order. Latter arriving people are more likely to have
     // empty slots.
@@ -651,16 +652,19 @@ function callEverybodyElse(roomName, otherPeople) {
             connectCount++;
             if( connectCount < maxCALLERS && position > 0) {
                 establishConnection(position-1);
+                console.log("call success " + position);
             }
         }
         function callFailure(errorCode, errorText) {
             //easyrtc.showError(errorCode, errorText);
+            console.log("call error " + errorCode + errorText);
+
             if( connectCount < maxCALLERS && position > 0) {
                 establishConnection(position-1);
             }
         }
         easyrtc.call(list[position], callSuccess, callFailure);
-
+        console.log("call " + list[position]);
     }
     if( list.length > 0) {
         establishConnection(list.length-1);
@@ -799,10 +803,10 @@ function startEasyRTCClient(carNum)
     easyrtc.enableVideoReceive(true);
 
     var localFilter = easyrtc.buildLocalSdpFilter( {
-        audioRecvBitrate:10, videoRecvBitrate:30
+        audioRecvBitrate:10, videoRecvBitrate:30,videoRecvCodec:"vp9"
     });
     var remoteFilter = easyrtc.buildRemoteSdpFilter({
-        audioSendBitrate: 10, videoSendBitrate:30
+        audioSendBitrate: 10, videoSendBitrate:30,videoSendCodec:"vp9"
     });
     easyrtc.setSdpFilters(localFilter, remoteFilter);
 
@@ -840,7 +844,7 @@ function startEasyRTCClient(carNum)
         //}
         var username = easyrtc.idToName(easyrtcid);
         setTimeout(function() {
-            document.getElementById(getIdOfBox(slot+1)).style.visibility = "hidden";
+//            document.getElementById(getIdOfBox(slot+1)).style.visibility = "hidden";
 
 //            if( easyrtc.getConnectionCount() == 0 ) { // no more connections
 //                expandThumb(0);
