@@ -642,6 +642,7 @@ function prepVideoBox(whichBox) {
                     easyrtc.sendPeerMessage(easyrtcid, "clickCar", carNum);
                 }
             }
+            location.reload(true)
         }
     };
 }
@@ -703,14 +704,14 @@ function callEverybodyElse(roomName, otherPeople) {
         box = selfBox;
     } else {
         for (var key in boxCarNumHash) {
-            if (boxCarNumHash[key] == content) {
+            if (boxCarNumHash[key] == currentCarNum) {
                 box = key;
                 break;
             }
         }
     }
 
-    if (box != null) {
+    if (box != null && currentCarNum != serverCarNum) {
         document.getElementById(box).click();
     }
 }
@@ -1004,8 +1005,8 @@ function appInit()
                             var enableVideo = false;
                             if (selfCarNum == currentCarNum)
                                 enableVideo = true;
-                            if (selfCarNum == serverCarNum)
-                                enableVideo = true;
+                            //if (selfCarNum == serverCarNum)
+                                //enableVideo = true;
                             startEasyRTCClient(data.carNum, enableVideo);
                             var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
                             var id = getIdOfBox(data.carNum);
