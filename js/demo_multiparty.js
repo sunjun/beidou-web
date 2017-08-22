@@ -15,6 +15,8 @@ var serverCarNum = 0;
 var selfCarNum = 0;
 
 var carNumberBoxHash = {};
+var boxArray = [];
+var selfBox;
 
 easyrtc.dontAddCloseButtons(true);
 
@@ -260,7 +262,7 @@ function reshape4of4(parentw, parenth) {
 var boxUsed = [true, false, false, false, false, false, false, false];
 var boxPostionUsed = [false, false, false, false, false, false, false, false];
 var boxPostionHash = {"box0":0, "box1":1, "box2":2, "box3":3, "box4":4, "box5":5, "box6":6, "box7":7}
-var boxCarNumHash = {"box0":0, "box1":1, "box2":2, "box3":3, "box4":4, "box5":5, "box6":6, "box7":7, "box8":8}
+var boxCarNumHash = {"box0":-1, "box1":-1, "box2":-1, "box3":-1, "box4":-1, "box5":-1, "box6":-1, "box7":-1, "box8":-1}
 var connectCount = 0;
 
 
@@ -612,11 +614,19 @@ function expandThumbNew(whichBox) {
 function prepVideoBox(whichBox) {
     var id = getIdOfBox(whichBox);
     setReshaper(id, reshapeThumbsNew[whichBox]);
-    if (serverCarNum == selfCarNum) {
-        document.getElementById(id).onclick = function() {
-            expandThumbNew(whichBox);
-        };
-    }
+    document.getElementById(id).onclick = function() {
+        expandThumbNew(whichBox);
+        if (serverCarNum == selfCarNum) {
+            var carNum = boxCarNumHash[id];
+
+            for(var i = 0; i < maxCALLERS; i++ ) {
+                var easyrtcid = easyrtc.getIthCaller(i);
+                if( easyrtcid && easyrtcid != "") {
+                    easyrtc.sendPeerMessage(easyrtcid, "clickCar", carNum);
+                }
+            }
+        }
+    };
 }
 
 
@@ -773,12 +783,21 @@ function showMessage(startX, startY, content) {
 }
 
 function messageListener(easyrtcid, msgType, content) {
-    for(var i = 0; i < maxCALLERS; i++) {
-        if( easyrtc.getIthCaller(i) == easyrtcid) {
-            var startArea = document.getElementById(getIdOfBox(i+1));
-            var startX = parseInt(startArea.offsetLeft) + parseInt(startArea.offsetWidth)/2;
-            var startY = parseInt(startArea.offsetTop) + parseInt(startArea.offsetHeight)/2;
-            showMessage(startX, startY, content);
+    if (msgType == "clickCar") {
+        var box;
+        if (content == selfCarNum) {
+            box = selfBox;
+        } else {
+            for (var key in boxArray) {
+                if (boxArray[key] == content) {
+                    box = key;
+                    break;
+                }
+            }
+        }
+
+        if (box != null) {
+            document.getElementById(box).click();
         }
     }
 }
@@ -813,8 +832,9 @@ function startEasyRTCClient(carNum)
 
     easyrtc.setRoomOccupantListener(callEverybodyElse);
     easyrtc.setUsername(carNum);
-    var selfBox = getIdOfBox(carNum);
-    var boxArray = getBoxArray(selfBox);
+    selfBox = getIdOfBox(carNum);
+    boxCarNumHash[selfBox] = carNum;
+    boxArray = getBoxArray(selfBox);
     console.log(boxArray);
     easyrtc.easyApp("easyrtc.multiparty", selfBox, boxArray, loginSuccess);
     easyrtc.setPeerListener(messageListener);
@@ -830,6 +850,10 @@ function startEasyRTCClient(carNum)
 //            document.getElementById('textEntryButton').style.display = 'block';
 //        }
         var username = easyrtc.idToName(easyrtcid);
+
+        var boxId = boxArray[slot];
+        boxCarNumHash[boxId] = username;
+
         //document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
         var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
         document.getElementById(getIdOfBox(username)).poster = imageName;
