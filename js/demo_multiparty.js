@@ -865,7 +865,7 @@ function startEasyRTCClient(carNum, enableVideo)
 
         //document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
         var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
-        document.getElementById(getIdOfBox(username)).poster = imageName;
+        document.getElementById(boxId).poster = imageName;
 
 //        handleWindowResize();
     });
