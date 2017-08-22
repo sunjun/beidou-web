@@ -785,8 +785,11 @@ function showMessage(startX, startY, content) {
 function messageListener(easyrtcid, msgType, content) {
     if (msgType == "clickCar") {
         var box;
+        var enableVideo = false;
+        easyrtc.disconnect();
         if (content == selfCarNum) {
             box = selfBox;
+            enableVideo = true;
         } else {
             for (var key in boxCarNumHash) {
                 if (boxCarNumHash[key] == content) {
@@ -794,8 +797,10 @@ function messageListener(easyrtcid, msgType, content) {
                     break;
                 }
             }
+            enableVideo = false;
         }
 
+        startEasyRTCClient(selfCarNum, enableVideo);
         if (box != null) {
             document.getElementById(box).click();
         }
@@ -817,9 +822,13 @@ function getBoxArray(box)
     return boxArray;
 }
 
-function startEasyRTCClient(carNum)
+function startEasyRTCClient(carNum, enableVideo)
 {
-    easyrtc.enableVideo(true);
+    if (enableVideo == true) {
+        easyrtc.enableVideo(true);
+    } else {
+        easyrtc.enableVideo(false);
+    }
     easyrtc.enableVideoReceive(true);
 
     var localFilter = easyrtc.buildLocalSdpFilter( {
@@ -931,7 +940,10 @@ function appInit()
                         console.log(data.carNum);
                         if (data.carNum) {
                             selfCarNum = data.carNum;
-                            startEasyRTCClient(data.carNum);
+                            var enableVideo = false;
+                            if (selfCarNum == serverCarNum)
+                                enableVideo = true;
+                            startEasyRTCClient(data.carNum, enableVideo);
                             var imageName = "http://127.0.0.1:8000/web/images/audio" + data.carNum + ".png";
                             var id = getIdOfBox(data.carNum);
                             document.getElementById(id).style.visibility = "visible";
