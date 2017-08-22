@@ -13,6 +13,7 @@ var smallWidth = 110;
 var smallHeight = 83;
 var serverCarNum = 0;
 var selfCarNum = 0;
+var currentCarNum = 0;
 
 var carNumberBoxHash = {};
 var boxArray = [];
@@ -618,6 +619,22 @@ function prepVideoBox(whichBox) {
         expandThumbNew(whichBox);
         if (serverCarNum == selfCarNum) {
             var carNum = boxCarNumHash[id];
+            var url = '../../setCurrentCarNumber?carNum='+carNum;
+
+            fetch(url)
+                .then(
+                        function(response) {
+                            if (response.status !== 200) {
+                                console.log('Looks like there was a problem. Status Code: ' +
+                                        response.status);
+                                return;
+                            }
+                        }
+                     )
+                .catch(function(err) {
+                    console.log('Fetch Error :-S', err);
+                });
+
 
             for(var i = 0; i < maxCALLERS; i++ ) {
                 var easyrtcid = easyrtc.getIthCaller(i);
@@ -679,6 +696,22 @@ function callEverybodyElse(roomName, otherPeople) {
     }
     if( list.length > 0) {
         establishConnection(list.length-1);
+    }
+
+    var box;
+    if (currentCarNum == selfCarNum) {
+        box = selfBox;
+    } else {
+        for (var key in boxCarNumHash) {
+            if (boxCarNumHash[key] == content) {
+                box = key;
+                break;
+            }
+        }
+    }
+
+    if (box != null) {
+        document.getElementById(box).click();
     }
 }
 
@@ -804,6 +837,7 @@ function messageListener(easyrtcid, msgType, content) {
         if (box != null) {
             document.getElementById(box).click();
         }
+        location.reload(true);
     }
 }
 
@@ -926,6 +960,33 @@ function appInit()
             console.log('Fetch Error :-S', err);
         });
 
+    fetch('../../currentCarNumber')
+        .then(
+                function(response) {
+                    if (response.status !== 200) {
+                        console.log('Looks like there was a problem. Status Code: ' +
+                                response.status);
+                        return;
+                    }
+
+                    // Examine the text in the response
+                    response.json().then(function(data) {
+                        console.log(data.carNum);
+                        if (data.carNum) {
+                            currentCarNum = data.carNum;
+                            console.log(currentCarNum);
+                            //setReshaper(getIdOfBox(currentCarNum), reshapeThumbsNew[0]);
+                            activeBox = currentCarNum;
+                            handleWindowResize();
+                        }
+                    });
+                }
+             )
+        .catch(function(err) {
+            console.log('Fetch Error :-S', err);
+        });
+
+
     fetch('../../userName')
         .then(
                 function(response) {
@@ -941,6 +1002,8 @@ function appInit()
                         if (data.carNum) {
                             selfCarNum = data.carNum;
                             var enableVideo = false;
+                            if (selfCarNum == currentCarNum)
+                                enableVideo = true;
                             if (selfCarNum == serverCarNum)
                                 enableVideo = true;
                             startEasyRTCClient(data.carNum, enableVideo);
