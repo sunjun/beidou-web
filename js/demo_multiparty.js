@@ -14,6 +14,8 @@ var smallHeight = 83;
 var serverCarNum = 0;
 var selfCarNum = 0;
 
+var carNumberBoxHash = {};
+
 easyrtc.dontAddCloseButtons(true);
 
 function getIdOfBox(boxNum) {
@@ -258,6 +260,7 @@ function reshape4of4(parentw, parenth) {
 var boxUsed = [true, false, false, false, false, false, false, false];
 var boxPostionUsed = [false, false, false, false, false, false, false, false];
 var boxPostionHash = {"box0":0, "box1":1, "box2":2, "box3":3, "box4":4, "box5":5, "box6":6, "box7":7}
+var boxCarNumHash = {"box0":0, "box1":1, "box2":2, "box3":3, "box4":4, "box5":5, "box6":6, "box7":7, "box8":8}
 var connectCount = 0;
 
 
@@ -609,14 +612,16 @@ function expandThumbNew(whichBox) {
 function prepVideoBox(whichBox) {
     var id = getIdOfBox(whichBox);
     setReshaper(id, reshapeThumbsNew[whichBox]);
-    document.getElementById(id).onclick = function() {
-        expandThumbNew(whichBox);
-    };
+    if (serverCarNum == selfCarNum) {
+        document.getElementById(id).onclick = function() {
+            expandThumbNew(whichBox);
+        };
+    }
 }
 
 
 function killActiveBox() {
-    if( activeBox > 0) {
+    if (activeBox > 0) {
         var easyrtcid = easyrtc.getIthCaller(activeBox-1);
         collapseToThumb();
         setTimeout( function() {
@@ -625,13 +630,9 @@ function killActiveBox() {
     }
 }
 
-
 function muteActiveBox() {
     updateMuteImage(true);
 }
-
-
-
 
 function callEverybodyElse(roomName, otherPeople) {
 
@@ -860,18 +861,11 @@ function appInit()
 {
     // Prep for the top-down layout manager
     setReshaper('fullpage', reshapeFull);
-    for(var i = 0; i <= numVideoOBJS; i++) {
-        prepVideoBox(i);
-    }
     setReshaper('killButton', killButtonReshaper);
     setReshaper('muteButton', muteButtonReshaper);
     setReshaper('textentryBox', reshapeTextEntryBox);
     setReshaper('textentryField', reshapeTextEntryField);
     setReshaper('textEntryButton', reshapeTextEntryButton);
-
-    updateMuteImage(false);
-    window.onresize = handleWindowResize;
-    handleWindowResize(); //initial call of the top-down layout manager
 
     fetch('../../serverCarNum')
         .then(
@@ -925,6 +919,13 @@ function appInit()
         .catch(function(err) {
             console.log('Fetch Error :-S', err);
         });
+
+     for(var i = 0; i <= numVideoOBJS; i++) {
+         prepVideoBox(i);
+     }
+     updateMuteImage(false);
+     window.onresize = handleWindowResize;
+     handleWindowResize(); //initial call of the top-down layout manager
 }
 
 
