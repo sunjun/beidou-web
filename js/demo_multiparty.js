@@ -788,8 +788,8 @@ function messageListener(easyrtcid, msgType, content) {
         if (content == selfCarNum) {
             box = selfBox;
         } else {
-            for (var key in boxArray) {
-                if (boxArray[key] == content) {
+            for (var key in boxCarNumHash) {
+                if (boxCarNumHash[key] == content) {
                     box = key;
                     break;
                 }
