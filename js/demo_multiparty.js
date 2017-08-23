@@ -853,6 +853,10 @@ function startEasyRTCClient(carNum, enableVideo)
     console.log(boxArray);
     easyrtc.easyApp("easyrtc.multiparty", selfBox, boxArray, loginSuccess);
     easyrtc.setPeerListener(messageListener);
+    if (selfCarNum == currentCarNum) {
+        setReshaper(selfBox, reshapeThumbsNew[0]);
+        handleWindowResize();
+    }
     easyrtc.setDisconnectListener( function() {
         //easyrtc.showError("LOST-CONNECTION", "Lost connection to signaling server");
     });
