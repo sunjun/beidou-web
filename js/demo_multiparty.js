@@ -854,6 +854,7 @@ function startEasyRTCClient(carNum, enableVideo)
     easyrtc.easyApp("easyrtc.multiparty", selfBox, boxArray, loginSuccess);
     easyrtc.setPeerListener(messageListener);
     if (selfCarNum == currentCarNum) {
+        activeBox = currentCarNum;
         setReshaper(selfBox, reshapeThumbsNew[0]);
         handleWindowResize();
     }
@@ -873,6 +874,7 @@ function startEasyRTCClient(carNum, enableVideo)
         var boxId = boxArray[slot];
         boxCarNumHash[boxId] = username;
         if (username == currentCarNum) {
+            activeBox = currentCarNum;
             setReshaper(boxId, reshapeThumbsNew[0]);
             handleWindowResize();
         }
