@@ -868,8 +868,10 @@ function startEasyRTCClient(carNum, enableVideo)
 
         var boxId = boxArray[slot];
         boxCarNumHash[boxId] = username;
-        if (username == currentCarNum)
+        if (username == currentCarNum) {
             setReshaper(boxId, reshapeThumbsNew[0]);
+            handleWindowResize();
+        }
 
 
         //document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
