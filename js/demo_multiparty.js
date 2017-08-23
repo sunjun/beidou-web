@@ -868,7 +868,7 @@ function startEasyRTCClient(carNum, enableVideo)
 
         var boxId = boxArray[slot];
         boxCarNumHash[boxId] = username;
-        if (username == currentCarNumber)
+        if (username == currentCarNum)
             setReshaper(boxId, reshapeThumbsNew[0]);
 
 
