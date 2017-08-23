@@ -621,20 +621,7 @@ function prepVideoBox(whichBox) {
             var carNum = boxCarNumHash[id];
             var url = '../../setCurrentCarNumber?carNum='+carNum;
 
-            fetch(url)
-                .then(
-                        function(response) {
-                            if (response.status !== 200) {
-                                console.log('Looks like there was a problem. Status Code: ' +
-                                        response.status);
-                                return;
-                            }
-                        }
-                     )
-                .catch(function(err) {
-                    console.log('Fetch Error :-S', err);
-                });
-
+            fetch(url).then();
 
             for(var i = 0; i < maxCALLERS; i++ ) {
                 var easyrtcid = easyrtc.getIthCaller(i);
@@ -697,22 +684,6 @@ function callEverybodyElse(roomName, otherPeople) {
     }
     if( list.length > 0) {
         establishConnection(list.length-1);
-    }
-
-    var box;
-    if (currentCarNum == selfCarNum) {
-        box = selfBox;
-    } else {
-        for (var key in boxCarNumHash) {
-            if (boxCarNumHash[key] == currentCarNum) {
-                box = key;
-                break;
-            }
-        }
-    }
-
-    if (box != null && currentCarNum != serverCarNum) {
-        document.getElementById(box).click();
     }
 }
 
@@ -897,6 +868,9 @@ function startEasyRTCClient(carNum, enableVideo)
 
         var boxId = boxArray[slot];
         boxCarNumHash[boxId] = username;
+        if (username == currentCarNumber)
+            setReshaper(boxId, reshapeThumbsNew[0]);
+
 
         //document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
         var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
@@ -950,7 +924,7 @@ function appInit()
                         if (data.carNum) {
                             serverCarNum = data.carNum;
                             console.log(serverCarNum);
-                            setReshaper(getIdOfBox(serverCarNum), reshapeThumbsNew[0]);
+                            //setReshaper(getIdOfBox(serverCarNum), reshapeThumbsNew[0]);
                             activeBox = serverCarNum;
                             handleWindowResize();
                         }
