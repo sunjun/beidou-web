@@ -823,10 +823,10 @@ function startEasyRTCClient(carNum)
     easyrtc.enableVideoReceive(true);
 
     var localFilter = easyrtc.buildLocalSdpFilter( {
-        audioRecvBitrate:10, videoRecvBitrate:30,videoRecvCodec:"vp9"
+        audioRecvBitrate:10, audioRecvCodec:"Opus", videoRecvBitrate:30,videoRecvCodec:"vp9"
     });
     var remoteFilter = easyrtc.buildRemoteSdpFilter({
-        audioSendBitrate: 10, videoSendBitrate:30,videoSendCodec:"vp9"
+        audioSendBitrate: 10,audioSendCodec:"Opus", videoSendBitrate:30,videoSendCodec:"vp9"
     });
     easyrtc.setSdpFilters(localFilter, remoteFilter);
 
