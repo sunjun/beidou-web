@@ -69,7 +69,7 @@
         var videoRecvCodec = options.videoRecvCodec || '';
         var stereo = options.stereo;
         function trace(arg) {
-            console.log("trace:" + arg);
+            //console.log("trace:" + arg);
         }
         // these functions were cribbed from the google apprtc.appspot.com demo.
 

@@ -1,5 +1,3 @@
-
-
 var activeBox = 0;  // nothing selected
 var aspectRatio = 4/3;  // standard definition video aspect ratio
 var maxCALLERS = 8;
@@ -17,6 +15,21 @@ var selfCarNum = 0;
 var carNumberBoxHash = {};
 var boxArray = [];
 var selfBox;
+var start = 1;
+var serverEasyrtcId;
+
+var videoTracks = null;
+var audioTracks = null;
+
+var boxUsed = [true, false, false, false, false, false, false, false];
+var boxPostionUsed = [false, false, false, false, false, false, false, false];
+var boxPostionHash = {"box0":0, "box1":1, "box2":2, "box3":3, "box4":4, "box5":5, "box6":6, "box7":7};
+var boxCarNumHash = {"box0":-1, "box1":-1, "box2":-1, "box3":-1, "box4":-1, "box5":-1, "box6":-1, "box7":-1, "box8":-1};
+var boxCarVideoClosedHash = {"box0":false, "box1":false, "box2":false, "box3":false, "box4":false, "box5":false, "box6":false, "box7":false, "box8":false};
+var carNumRtcidMap = {};
+var connectCount = 0;
+
+var localDefaultStreamClosed = false;
 
 easyrtc.dontAddCloseButtons(true);
 
@@ -259,13 +272,6 @@ function reshape4of4(parentw, parenth) {
     }
 }
 
-var boxUsed = [true, false, false, false, false, false, false, false];
-var boxPostionUsed = [false, false, false, false, false, false, false, false];
-var boxPostionHash = {"box0":0, "box1":1, "box2":2, "box3":3, "box4":4, "box5":5, "box6":6, "box7":7}
-var boxCarNumHash = {"box0":-1, "box1":-1, "box2":-1, "box3":-1, "box4":-1, "box5":-1, "box6":-1, "box7":-1, "box8":-1}
-var connectCount = 0;
-
-
 function setSharedVideoSize(parentw, parenth) {
     layout = ((parentw /aspectRatio) < parenth)?'p':'l';
     var w, h;
@@ -492,6 +498,16 @@ function reshapeTextEntryButton(parentw, parenth) {
     }
 }
 
+function reshapeCloseButton(parentw, parenth) {
+
+    return {
+        left:(parentw-bigWidth-smallWidth)/4 -1000,
+        top:(parenth-bigHeight-smallHeight)/3 + bigHeight - 60,
+        width:80,
+        height:50
+    };
+}
+
 
 function handleWindowResize() {
     var fullpage = document.getElementById('fullpage');
@@ -628,7 +644,6 @@ function prepVideoBox(whichBox) {
         }
     };
 }
-
 
 function killActiveBox() {
     if (activeBox > 0) {
@@ -787,6 +802,7 @@ function messageListener(easyrtcid, msgType, content) {
         var box;
         if (content == selfCarNum) {
             box = selfBox;
+
         } else {
             for (var key in boxCarNumHash) {
                 if (boxCarNumHash[key] == content) {
@@ -799,6 +815,58 @@ function messageListener(easyrtcid, msgType, content) {
         if (box != null) {
             document.getElementById(box).click();
         }
+    } else if (msgType == "closeCar") {
+        var streamName = null;
+        var stream = null;
+
+        if (content == selfCarNum) {
+
+            if (localDefaultStreamClosed == false) {
+                easyrtc.closeLocalStream();
+                localDefaultStreamClosed = true;
+            } else {
+
+            }
+
+            for(var i = 0; i < maxCALLERS; i++ ) {
+                var easyrtcid = easyrtc.getIthCaller(i);
+                if( easyrtcid && easyrtcid != "") {
+                    var username = carNumRtcidMap[easyrtcid];
+
+                    var streamName = null;
+
+                    if (username != serverCarNum) {
+                        streamName = "onlyAudio" + username;
+                        stream = easyrtc.getLocalStream(streamName);
+                        if (!stream) {
+                            stream = easyrtc.buildLocalMediaStream(streamName, audioTracks, null);
+                        }
+                    } else {
+                        streamName = "audioVideo" + username;
+                        stream = easyrtc.getLocalStream(streamName);
+                        if (!stream) {
+                            stream = easyrtc.buildLocalMediaStream(streamName, audioTracks, videoTracks);
+                        }
+                    }
+
+                    //                setTimeout( function() {
+                    easyrtc.addStreamToCall(easyrtcid, streamName, null);
+                    //               }, 400);
+                }
+            }
+            var imageName = "http://127.0.0.1:8000/web/images/audio" + selfCarNum + ".png";
+            document.getElementById(selfBox).poster = imageName;
+
+        }
+
+        /*
+        var streamAV = "audioVideo";
+        var streamAudioVideo = easyrtc.getLocalStream(streamAV);
+        if (!streamAudioVideo) {
+            streamAudioVideo = easyrtc.buildLocalMediaStream(streamAV, audioTracks, videoTracks);
+        }
+        easyrtc.setVideoObjectSrc(document.getElementById(selfBox), streamAV);
+        */
     }
 }
 
@@ -841,6 +909,8 @@ function startEasyRTCClient(carNum)
     easyrtc.setDisconnectListener( function() {
         //easyrtc.showError("LOST-CONNECTION", "Lost connection to signaling server");
     });
+
+
     easyrtc.setOnCall( function(easyrtcid, slot) {
         console.log("getConnection count="  + easyrtc.getConnectionCount() );
         boxUsed[slot+1] = true;
@@ -849,11 +919,29 @@ function startEasyRTCClient(carNum)
 //            collapseToThumb();
 //            document.getElementById('textEntryButton').style.display = 'block';
 //        }
+
+        serverEasyrtcId = easyrtcid;
         var username = easyrtc.idToName(easyrtcid);
+
+        if (carNumRtcidMap[easyrtcid]) {
+            console.log("find " + username + ":" + easyrtcid);
+            //return;
+        } else {
+            console.log("not find " + username + ":" + easyrtcid);
+            carNumRtcidMap[easyrtcid] = username;
+        }
 
         var boxId = boxArray[slot];
         boxCarNumHash[boxId] = username;
 
+
+        /*
+        easyrtc.setVideoObjectSrc(document.getElementById(selfBox), streamAV);
+        easyrtc.setVideoObjectSrc(document.getElementById(boxId), stream);
+
+        document.getElementById(selfBox).style.visibility = "visible";
+        document.getElementById(boxId).style.visibility = "visible";
+        */
         //document.getElementById(getIdOfBox(slot+1)).style.visibility = "visible";
         var imageName = "http://127.0.0.1:8000/web/images/audio" + username + ".png";
         document.getElementById(getIdOfBox(username)).poster = imageName;
@@ -881,6 +969,45 @@ function startEasyRTCClient(carNum)
     });
 }
 
+function setMediaTracks()
+{
+    navigator.getUserMedia ( { video: true, audio: true },
+            // successCallback
+            function(localMediaStream) {
+                videoTracks = localMediaStream.getVideoTracks();
+                audioTracks = localMediaStream.getAudioTracks();
+                var streamName = "audioVideo";
+                var streamAudioVideo = easyrtc.getLocalStream(streamName);
+                if (!streamAudioVideo) {
+                    streamAudioVideo = easyrtc.buildLocalMediaStream(streamName, audioTracks, videoTracks);
+                }
+            },
+
+            // errorCallback
+            function(err) {
+                console.log("The following error occured: " + err);
+            }
+    );
+}
+
+function closeVideo()
+{
+    if (selfCarNum != serverCarNum) {
+        return;
+    }
+
+    for(var i = 0; i < maxCALLERS; i++ ) {
+        var easyrtcid = easyrtc.getIthCaller(i);
+        if( easyrtcid && easyrtcid != "") {
+
+            var id = getIdOfBox(activeBox);
+            var carNum = boxCarNumHash[id];
+            easyrtc.sendPeerMessage(easyrtcid, "closeCar", carNum);
+        }
+    }
+
+}
+
 function appInit()
 {
     // Prep for the top-down layout manager
@@ -890,6 +1017,8 @@ function appInit()
     setReshaper('textentryBox', reshapeTextEntryBox);
     setReshaper('textentryField', reshapeTextEntryField);
     setReshaper('textEntryButton', reshapeTextEntryButton);
+
+    setMediaTracks();
 
     fetch('../../serverCarNum')
         .then(
@@ -936,6 +1065,10 @@ function appInit()
                             var id = getIdOfBox(data.carNum);
                             document.getElementById(id).style.visibility = "visible";
                             document.getElementById(id).poster = imageName;
+                            if (serverCarNum == selfCarNum) {
+                                //setReshaper('button0', reshapeCloseButton);
+                                handleWindowResize(); //initial call of the top-down layout manager
+                            }
                         }
                     });
                 }
@@ -951,5 +1084,3 @@ function appInit()
      window.onresize = handleWindowResize;
      handleWindowResize(); //initial call of the top-down layout manager
 }
-
-

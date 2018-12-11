@@ -4674,6 +4674,7 @@ var Easyrtc = function() {
      *    easyrtc.clearMediaStream( document.getElementById('selfVideo'));
      *
      */
+     /*
     this.clearMediaStream = function(element) {
         if (typeof element.src !== 'undefined') {
             //noinspection JSUndefinedPropertyAssignment
@@ -4682,6 +4683,26 @@ var Easyrtc = function() {
             element.srcObject = "";
         } else if (typeof element.mozSrcObject !== 'undefined') {
             element.mozSrcObject = null;
+        }
+    };
+    */
+    this.clearMediaStream = function(element) {
+        var clear = function() {
+            if (typeof element.src !== 'undefined') {
+                // noinspection JSUndefinedPropertyAssignment
+                element.src = "";
+            } else if (typeof element.srcObject !== 'undefined') {
+                element.srcObject = "";
+            } else if (typeof element.mozSrcObject !== 'undefined') {
+                element.mozSrcObject = null;
+            }
+        }
+        if (element && element.pause) {
+            element.pause();
+            clear();
+        }
+        else {
+            clear();
         }
     };
 
@@ -6040,6 +6061,16 @@ var Easyrtc = function() {
         }
     }
 
+    this.removeStreamToCall = function(easyrtcid, stream) {
+        if (peerConns[easyrtcid]) {
+            if (peerConns[easyrtcid].pc) {
+                 emitOnStreamClosed(easyrtcid, stream);
+                 try {
+                    peerConns[easyrtcid].pc.removeStream(stream);
+                 } catch( err) {}
+            }
+        }
+    }
     /** @private */
     function buildDeltaRecord(added, deleted) {
         function objectNotEmpty(obj) {
