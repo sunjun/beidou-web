@@ -1,12 +1,23 @@
+var http = require('http');
+var https = require('https');
+var fs      = require("fs");        // file system core module
+
+var privateKey  = fs.readFileSync(__dirname + "/ssl/domain.key");
+var certificate = fs.readFileSync(__dirname + "/ssl/domain.cert");
+
+var credentials = {key: privateKey, cert: certificate};
 var express = require('express'),
 app = express(),
 port = 8000;
+
+var httpServer = http.createServer(app);
+var httpsServer = https.createServer(credentials, app);
 
 var mysql      = require('mysql');
 var connection = mysql.createConnection({
 	host     : 'localhost',
 	user     : 'root',
-	password : 'x5',
+	password : '20170501',
 	database : 'SNCS'
 });
 
@@ -19,7 +30,6 @@ connection.connect(
 
 		console.log('connected as id ' + connection.threadId);
 	});
-
 
 app.use(express.static(process.env['HOME']));
 
@@ -60,6 +70,39 @@ app.get('/userName', function (req, res) {
   });
 })
 
+app.get('/isServer', function (req, res) {
+
+  var ip = getLocalIp();
+  console.log(ip);
+
+  var isServer = false;
+  var sql = 'select rank from car where num = (select num  FROM equipt where ip="' + ip + '")';
+  connection.query(sql, function (error, results, fields) {
+    if (error) throw error;
+
+    console.log('sql', sql);
+    console.log('The solution is: ', results[0].rank);
+    res.setHeader('Content-Type', 'application/json');
+    if (results[0].rank == "0") {
+      isServer = true;
+    }
+    res.send(JSON.stringify({ isServerCar: isServer }));
+  });
+})
+
+app.get('/getServer', function (req, res) {
+
+  var sql = 'select ip from equipt where num = (select num  FROM car where rank="0")';
+  connection.query(sql, function (error, results, fields) {
+    if (error) throw error;
+
+    console.log('sql', sql);
+    console.log('The solution is: ', results[0].ip);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({ serverIp: results[0].ip }));
+  });
+})
+
 function getLocalIp() {
   const os = require('os');
   for(let addresses of Object.values(os.networkInterfaces())) {
@@ -71,4 +114,6 @@ function getLocalIp() {
   }
 }
 
-app.listen(port);
+//app.listen(port);
+httpServer.listen(8000);
+httpsServer.listen(8003);
