@@ -21,6 +21,19 @@ var connection = mysql.createConnection({
 	database : 'SNCS'
 });
 
+var execFile = require('child_process').execFile;
+
+execFile('./microphone.sh', {encoding:'utf8'},function (err,stdout,stderr){
+  if (err){
+    console.log(err);
+    return;
+
+  }
+  console.log('stdout:'+stdout);
+  console.log('stderr:'+stderr);
+
+});
+
 connection.connect(
 	function(err) {
 		if (err) {
